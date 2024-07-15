@@ -1,4 +1,4 @@
-const api_url = "http://localhost:10010";
+const api_url = "http://localhost:5002";
 
 export const startPlan = async () => {
     const url = `${api_url}/Plan`;
@@ -27,11 +27,40 @@ export const addProcedureToPlan = async (planId, procedureId) => {
         },
         body: JSON.stringify(command),
     });
+    console.log("response", response);
 
     if (!response.ok) throw new Error("Failed to create plan");
 
     return true;
 };
+
+export const assignUsersToProcedure = async (requestBody) => {
+    const url = `${api_url}/Plan/AddProcedureToUserPlan`;
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+        });
+        // console.log('Response:', response); // Log the response
+
+        if (!response.ok) {
+            throw new Error('Failed to assign users to procedure');
+        }
+
+        const responseData = await response.json();
+        console.log('Response data:', responseData); // Log the response data
+        return responseData;
+    } catch (error) {
+        console.error('Error assigning users to procedure:', error.message);
+        throw error;
+    }
+};
+
+
 
 export const getProcedures = async () => {
     const url = `${api_url}/Procedures`;
@@ -46,6 +75,17 @@ export const getProcedures = async () => {
 
 export const getPlanProcedures = async (planId) => {
     const url = `${api_url}/PlanProcedure?$filter=planId eq ${planId}&$expand=procedure`;
+    const response = await fetch(url, {
+        method: "GET",
+    });
+
+    if (!response.ok) throw new Error("Failed to get plan procedures");
+
+    return await response.json();
+};
+
+export const getPlanProceduresUsers = async (planId) => {
+    const url = `${api_url}/PlanProcedureUser?$filter=planId eq ${planId}&$expand=procedure`;
     const response = await fetch(url, {
         method: "GET",
     });
