@@ -1,13 +1,32 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import ReactSelect from "react-select";
+import { assignUsersToProcedure } from "../../../api/api";
 
-const PlanProcedureItem = ({ procedure, users }) => {
+const PlanProcedureItem = ({ procedure, planId, users,userNames}) => {
     const [selectedUsers, setSelectedUsers] = useState(null);
 
-    const handleAssignUserToProcedure = (e) => {
+    useEffect(() => {
+        const selected = userNames.map(userName => users.find(user => user.label === userName));
+        setSelectedUsers(selected.filter(Boolean)); 
+    }, [userNames, users]);
+
+    const handleAssignUserToProcedure = async (e) => {
         setSelectedUsers(e);
-        // TODO: Remove console.log and add missing logic
-        console.log(e);
+        const userIds = e.map(user => user.value);
+
+        const requestBody = {
+            procedureId: procedure.procedureId,
+            userIds: userIds,
+            planId: planId,
+        };
+        // console.log("requestBody=====",requestBody)
+
+        try {
+            const response = await assignUsersToProcedure(requestBody);
+            console.log('Assignment successful:', response);
+            } catch (error) {
+                console.error('Failed to assign users:', error);
+            }
     };
 
     return (
@@ -15,15 +34,14 @@ const PlanProcedureItem = ({ procedure, users }) => {
             <div>
                 {procedure.procedureTitle}
             </div>
-
-            <ReactSelect
-                className="mt-2"
-                placeholder="Select User to Assign"
-                isMulti={true}
-                options={users}
-                value={selectedUsers}
-                onChange={(e) => handleAssignUserToProcedure(e)}
-            />
+                <ReactSelect
+                    className="mt-2"
+                    placeholder="Select User to Assign"
+                    isMulti={true}
+                    options={users}
+                    value={selectedUsers}
+                    onChange={handleAssignUserToProcedure}
+                />
         </div>
     );
 };
