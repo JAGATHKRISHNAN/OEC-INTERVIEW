@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import {
   addProcedureToPlan,
   getPlanProcedures,
+  getPlanProceduresUsers,
   getProcedures,
   getUsers,
 } from "../../api/api";
@@ -14,20 +15,43 @@ const Plan = () => {
   let { id } = useParams();
   const [procedures, setProcedures] = useState([]);
   const [planProcedures, setPlanProcedures] = useState([]);
+  const [planProceduresUsers, setPlanProceduresUsers] = useState([]);
   const [users, setUsers] = useState([]);
 
   useEffect(() => {
     (async () => {
       var procedures = await getProcedures();
       var planProcedures = await getPlanProcedures(id);
+      var planProceduresUsers = await getPlanProceduresUsers(id);
       var users = await getUsers();
 
-      var userOptions = [];
-      users.map((u) => userOptions.push({ label: u.name, value: u.userId }));
+      var userOptions = users.map((u) => ({
+        label: u.name,
+        value: u.userId
+      }));
 
       setUsers(userOptions);
       setProcedures(procedures);
       setPlanProcedures(planProcedures);
+
+      const userNamesByProcedureId = planProceduresUsers.reduce((acc, item) => {
+        const user = userOptions.find(u => u.value === item.userId);
+        const userName = user ? user.label : 'Unknown User';
+
+        if (!acc[item.procedureId]) {
+          acc[item.procedureId] = [];
+        }
+        acc[item.procedureId].push(userName);
+        return acc;
+      }, {});
+
+      const planProcedureUserData = planProceduresUsers.map((item) => ({
+        ...item,
+        userNames: userNamesByProcedureId[item.procedureId]
+      }));
+
+      setPlanProceduresUsers(planProcedureUserData);
+      // console.log("data of planProceduresUsers table: ", planProcedureUserData);
     })();
   }, [id]);
 
@@ -79,13 +103,18 @@ const Plan = () => {
                   <div className="col">
                     <h4>Added to Plan</h4>
                     <div>
-                      {planProcedures.map((p) => (
-                        <PlanProcedureItem
-                          key={p.procedure.procedureId}
-                          procedure={p.procedure}
-                          users={users}
-                        />
-                      ))}
+                      {planProcedures.map((p) => {
+                        const planProcedureUser = planProceduresUsers.find(pu => pu.procedureId === p.procedureId);
+                        return (
+                          <PlanProcedureItem
+                            key={p.procedure.procedureId}
+                            procedure={p.procedure}
+                            planId={id}
+                            userNames={planProcedureUser ? planProcedureUser.userNames : ['Unknown User']}
+                            users={users}
+                          />
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
